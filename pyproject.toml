@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "cinematickets"
+version = "0.1.0"
+description = ""
+authors = ["Omar Desouky <omaressamdesouky2274@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+Django = "^4.1.2"
+djangorestframework = "^3.14.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
