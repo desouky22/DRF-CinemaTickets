@@ -1,10 +1,10 @@
-from mimetypes import guess_all_extensions
 from django.http import JsonResponse
 from .models import Guest, Movie, Reservation
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework import mixins, generics, viewsets
 from .serializers import GuestSerializer, MovieSerializer, ReservationSerializer
 from tickets import serializers
 
@@ -125,3 +125,94 @@ class GuestPK(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Guest.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class MixinsList(
+    generics.GenericAPIView,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+):
+    queryset = Guest.objects.all()
+    serializer_class = GuestSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class MixinsPK(
+    generics.GenericAPIView,
+    mixins.DestroyModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin,
+):
+    queryset = Guest.objects.all()
+    serializer_class = GuestSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
+class GenericsList(generics.ListCreateAPIView):
+    queryset = Guest.objects.all()
+    serializer_class = GuestSerializer
+
+
+class GenericsPK(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Guest.objects.all()
+    serializer_class = GuestSerializer
+
+
+class ViewSetGuest(viewsets.ModelViewSet):
+    queryset = Guest.objects.all()
+    serializer_class = GuestSerializer
+
+
+class ViewSetMovie(viewsets.ModelViewSet):
+    queryset = Movie.objects.all()
+    serializer_class = MovieSerializer
+
+
+class ViewSetReservation(viewsets.ModelViewSet):
+    queryset = Reservation.objects.all()
+    serializer_class = ReservationSerializer
+
+
+# find a movie
+@api_view(["GET"])
+def find_movie(request, *args, **kwargs):
+    movies = Movie.objects.filter(
+        movie=request.data["movie"],
+        hall=request.data["hall"],
+    )
+
+    serializer = MovieSerializer(movies, many=True)
+    return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+def create_new_reservation(request, *args, **kwargs):
+    movie = Movie.objects.get(
+        hall=request.data["hall"],
+        movie=request.data["movie"],
+    )
+
+    guest = Guest()
+    guest.name = "Mohammed"
+    guest.mobile = "445644564564"
+    guest.save()
+
+    reservation = Reservation()
+    reservation.guest = guest
+    reservation.movie = movie
+    reservation.save()
+    serializer = ReservationSerializer(reservation)
+    return Response(data=serializer.data, status=status.HTTP_201_CREATED)
