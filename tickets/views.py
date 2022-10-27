@@ -1,12 +1,30 @@
 from django.http import JsonResponse
-from .models import Guest, Movie, Reservation
+from .models import Guest, Movie, Reservation, Post
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework import mixins, generics, viewsets
-from .serializers import GuestSerializer, MovieSerializer, ReservationSerializer
-from tickets import serializers
+from rest_framework.authentication import (
+    BasicAuthentication,
+    SessionAuthentication,
+    TokenAuthentication,
+)
+
+from rest_framework.permissions import (
+    AllowAny,
+    IsAdminUser,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
+from .serializers import (
+    GuestSerializer,
+    MovieSerializer,
+    ReservationSerializer,
+    PostSerializer,
+)
+
+from .permissions import IsAuthorOrReadOnly
 
 
 def no_rest_no_model(request, *args, **kwargs):
@@ -81,6 +99,9 @@ def FBV_PK(request, *args, **kwargs):
 
 
 class GuestList(APIView):
+    authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
+
     def get(self, request, *args, **kwargs):
         queryset = Guest.objects.all()
         serializer = GuestSerializer(queryset, many=True)
@@ -99,6 +120,7 @@ class GuestPK(APIView):
     def get(self, request, *args, **kwargs):
         try:
             guest = Guest.objects.get(pk=kwargs["pk"])
+            # self.check_object_permissions(request, guest)
             serializer = GuestSerializer(guest)
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         except Guest.DoesNotExist:
@@ -216,3 +238,15 @@ def create_new_reservation(request, *args, **kwargs):
     reservation.save()
     serializer = ReservationSerializer(reservation)
     return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+
+
+class PostPK(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthorOrReadOnly]
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+
+
+class PostList(generics.ListCreateAPIView):
+    permission_classes = [IsAuthorOrReadOnly]
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer

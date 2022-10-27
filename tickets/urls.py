@@ -2,6 +2,7 @@ from multiprocessing.resource_tracker import ResourceTracker
 from django.urls import path, include
 from . import views
 from rest_framework.routers import DefaultRouter
+from rest_framework.authtoken.views import obtain_auth_token
 
 router = DefaultRouter()
 router.register("guests", views.ViewSetGuest)
@@ -22,4 +23,9 @@ urlpatterns = [
     path("rest/ViewSet/", include(router.urls)),
     path("rest/find_movie/", views.find_movie),
     path("rest/new_reservation/", views.create_new_reservation),
+    path(
+        "api-token-auth/", obtain_auth_token
+    ),  # to obtain the token from the data base from the token model
+    path("rest/PostPK/<int:pk>/", views.PostPK.as_view()),
+    path("rest/PostList/", views.PostList.as_view()),
 ]
